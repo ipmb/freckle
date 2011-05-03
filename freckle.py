@@ -69,7 +69,7 @@ class Freckle(object):
                 val = "false"
             search_args['search[billable]'] = val
         query = urllib.urlencode(search_args)
-        return self.request("%s/entries.xml?%s" % self.endpoint, self.query)
+        return self.request("%s/entries.xml?%s" % (self.endpoint, query))
 
     def get_users(self):
         return self.request("%s/users.xml" % self.endpoint)
