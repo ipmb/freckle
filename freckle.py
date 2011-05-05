@@ -1,3 +1,4 @@
+"""Python client for Freckle"""
 from cStringIO import StringIO
 import datetime
 import urllib
@@ -6,31 +7,27 @@ import httplib2
 import iso8601
 import yaml
 # Ugh, this is sad...
-# http://lxml.de/tutorial.html
-try:
-    from lxml import etree
-except ImportError:
+ETREE_MODULES = [
+    'lxml.etree',
+    'xml.etree.cElementTree',
+    'cElementTree',
+    'xml.etree.ElementTree',
+    'elementtree.ElementTree',
+]
+etree = None
+for name in ETREE_MODULES:
     try:
-        # Python 2.5
-        import xml.etree.cElementTree as etree
+        etree = __import__(name, '', '', [''])
+        break
     except ImportError:
-        try:
-            # Python 2.5
-            import xml.etree.ElementTree as etree
-        except ImportError:
-            try:
-                # normal cElementTree install
-                import cElementTree as etree
-            except ImportError:
-                try:
-                # normal ElementTree install
-                    import elementtree.ElementTree as etree
-                except ImportError:
-                    print("Failed to import ElementTree from any known place")
+        continue
+if etree is None:
+    raise ImportError("Failed to import ElementTree from any known place")
 
 
 
 class Freckle(object):
+    """Class for interacting with the Freckle API"""
 
     def __init__(self, account, token):
         self.endpoint = "https://%s.letsfreckle.com/api" % account
@@ -38,12 +35,15 @@ class Freckle(object):
         self.http = httplib2.Http()
 
     def request(self, url, method="GET", body=""):
+        """Make a request to Freckle and return Python objects"""
         resp, content = self.http.request(url, method, body, 
                                           headers=self.headers)
         return self.parse_response(content)
 
     def get_entries(self, **kwargs):
         """
+        Get time entries from Freckle
+
         Optional search arguments:
 
            * people: a list of user ids
@@ -60,8 +60,10 @@ class Freckle(object):
                 search_args['search[%s]' % search] = as_string
         for search in ('date_to', 'date_from'):
             if search in kwargs:
+                date = kwargs[search].strftime("%Y-%m-%d")
                 # strip "date_"
-                search_args['search[%s]' % search[5:]] = kwargs[search].strftime("%Y-%m-%d")
+                freckle_keyword = 'search[%s]' % search[5:]
+                search_args[freckle_keyword] = date
         if "billable" in kwargs:
             if kwargs['billable']:
                 val = "true"
@@ -72,9 +74,11 @@ class Freckle(object):
         return self.request("%s/entries.xml?%s" % (self.endpoint, query))
 
     def get_users(self):
+        """Get users from Freckle"""
         return self.request("%s/users.xml" % self.endpoint)
 
     def get_projects(self):
+        """Get projects from Freckle"""
         return self.request("%s/projects.xml" % self.endpoint)
     
     def parse_response(self, xml_content):
@@ -96,22 +100,28 @@ class Freckle(object):
         return content
 
     def boolean_as_python(self, val):
+        """Convert text to boolean"""
         if val == 'true':
             return True
         else:
             return False
         
     def date_as_python(self, val):
+        """Convert text to date"""
         return datetime.date(*[int(x) for x in val.split("-")])
 
     def datetime_as_python(self, val):
+        """Convert text to datetime"""
         return iso8601.parse_date(val)
 
     def integer_as_python(self, val):
+        """Convert text to integer"""
         return int(val)
 
     def array_as_python(self, val):
+        """Convert text to list"""
         return val.split(",")
 
     def yaml_as_python(self, val):
+        """Convert YAML to dict"""
         return yaml.load(val)
