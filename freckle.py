@@ -25,18 +25,17 @@ if etree is None:
     raise ImportError("Failed to import ElementTree from any known place")
 
 
-
 class Freckle(object):
     """Class for interacting with the Freckle API"""
 
     def __init__(self, account, token):
         self.endpoint = "https://%s.letsfreckle.com/api" % account
-        self.headers = {"X-FreckleToken":token}
+        self.headers = {"X-FreckleToken": token}
         self.http = httplib2.Http()
 
     def request(self, url, method="GET", body=""):
         """Make a request to Freckle and return Python objects"""
-        resp, content = self.http.request(url, method, body, 
+        resp, content = self.http.request(url, method, body,
                                           headers=self.headers)
         return self.parse_response(content)
 
@@ -88,7 +87,7 @@ class Freckle(object):
     def get_projects(self):
         """Get projects from Freckle"""
         return self.request("%s/projects.xml" % self.endpoint)
-    
+
     def parse_response(self, xml_content):
         """Parse XML response into Python"""
         content = []
@@ -113,7 +112,7 @@ class Freckle(object):
             return True
         else:
             return False
-        
+
     def date_as_python(self, val):
         """Convert text to date"""
         return datetime.date(*[int(x) for x in val.split("-")])
