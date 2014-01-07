@@ -71,7 +71,15 @@ class Freckle(object):
                 val = "false"
             search_args['search[billable]'] = val
         query = urllib.urlencode(search_args)
-        return self.request("%s/entries.xml?%s" % (self.endpoint, query))
+
+        page = 1
+        response = []
+        while (page == 1) or paged_response:
+            paged_response = self.request("%s/entries.xml?per_page=1000&page=%d&%s" % (self.endpoint, page, query))
+            response.extend(paged_response)
+            page += 1
+
+        return response
 
     def get_users(self):
         """Get users from Freckle"""
